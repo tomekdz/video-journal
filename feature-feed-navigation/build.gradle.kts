@@ -1,9 +1,11 @@
 plugins {
     alias(libs.plugins.android.library)
+    alias(libs.plugins.compose.compiler)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 android {
-    namespace = "co.ynd.interview.tomek.core.testing"
+    namespace = "co.ynd.interview.tomek.feature.feed.navigation"
     compileSdk = 36
 
     defaultConfig {
@@ -18,11 +20,7 @@ android {
 }
 
 dependencies {
-    implementation(project(":core-domain"))
-    implementation(project(":core-data"))
-
-    implementation(libs.koin.test)
-    implementation(libs.koin.test.junit4)
-    implementation(libs.androidx.test.runner)
-    implementation(libs.kotlinx.coroutines.test)
+    implementation(libs.kotlinx.serialization.core)
+    implementation(libs.kotlinx.serialization.json)
+    implementation(libs.androidx.navigation3.runtime)
 }

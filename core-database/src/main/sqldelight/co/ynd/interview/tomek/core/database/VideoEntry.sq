@@ -1,0 +1,21 @@
+CREATE TABLE VideoEntry (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    filePath TEXT NOT NULL,
+    description TEXT NOT NULL DEFAULT '',
+    createdAt INTEGER NOT NULL,
+    durationMs INTEGER NOT NULL,
+    thumbnailPath TEXT
+);
+
+selectAll:
+SELECT * FROM VideoEntry ORDER BY createdAt DESC;
+
+selectById:
+SELECT * FROM VideoEntry WHERE id = ?;
+
+insert:
+INSERT INTO VideoEntry(filePath, description, createdAt, durationMs, thumbnailPath)
+VALUES (?, ?, ?, ?, ?);
+
+deleteById:
+DELETE FROM VideoEntry WHERE id = ?;

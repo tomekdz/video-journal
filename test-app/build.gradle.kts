@@ -1,45 +1,16 @@
-/*
- * Copyright (C) 2022 The Android Open Source Project
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-
-@Suppress("DSL_SCOPE_VIOLATION") // Remove when fixed https://youtrack.jetbrains.com/issue/KTIJ-19369
 plugins {
     alias(libs.plugins.android.test)
-
-    alias(libs.plugins.ksp)
 }
 
 android {
-    namespace = "co.ynd.interview.tomek.test.navigation"
+    namespace = "co.ynd.interview.tomek.test.app"
     compileSdk = 36
     targetProjectPath = ":app"
 
     defaultConfig {
-        minSdk = 23
+        minSdk = 26
         targetSdk = 36
-
-        testInstrumentationRunner = "co.ynd.interview.tomek.core.testing.HiltTestRunner"
-    }
-
-    buildFeatures {
-        aidl = false
-        buildConfig = false
-        renderScript = false
-        shaders = false
+        testInstrumentationRunner = "co.ynd.interview.tomek.core.testing.KoinTestRunner"
     }
 
     compileOptions {
@@ -48,28 +19,19 @@ android {
     }
 }
 
-kotlin {
-    compilerOptions {
-        jvmTarget.set(JvmTarget.JVM_17)
-    }
-}
-
 dependencies {
     implementation(project(":app"))
+    implementation(project(":core-domain"))
+    implementation(project(":core-testing"))
+    implementation(project(":feature-feed"))
+    implementation(project(":feature-feed-navigation"))
+    implementation(project(":feature-camera-navigation"))
+
     val composeBom = platform(libs.androidx.compose.bom)
     implementation(composeBom)
-    implementation(project(":core-data"))
-    implementation(project(":core-testing"))
-    implementation(project(":feature-journalitem"))
-    implementation(project(":feature-journalitem-navigation"))
 
-    // Testing
     implementation(libs.androidx.test.core)
-
-    // Hilt and instrumented tests.
-    implementation(libs.hilt.android.testing)
-    ksp(libs.hilt.compiler)
-
-    // Compose
+    implementation(libs.koin.test)
+    implementation(libs.koin.test.junit4)
     implementation(libs.androidx.compose.ui.test.junit4)
 }
