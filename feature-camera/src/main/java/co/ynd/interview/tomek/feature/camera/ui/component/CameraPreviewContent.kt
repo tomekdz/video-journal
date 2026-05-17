@@ -1,8 +1,11 @@
 package co.ynd.interview.tomek.feature.camera.ui.component
 
+import androidx.camera.compose.CameraXViewfinder
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.Preview
+import androidx.camera.core.SurfaceRequest
 import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.lifecycle.awaitInstance
 import androidx.camera.video.FileOutputOptions
 import androidx.camera.video.Quality
 import androidx.camera.video.QualitySelector
@@ -10,7 +13,6 @@ import androidx.camera.video.Recorder
 import androidx.camera.video.Recording
 import androidx.camera.video.VideoCapture
 import androidx.camera.video.VideoRecordEvent
-import androidx.camera.view.PreviewView
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -33,7 +35,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -45,7 +46,6 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import co.ynd.interview.tomek.core.ui.theme.RecordRed
@@ -69,6 +69,7 @@ internal fun CameraPreviewContent(
     var recordingDurationMs by remember { mutableLongStateOf(0L) }
     var videoCapture by remember { mutableStateOf<VideoCapture<Recorder>?>(null) }
     var lensFacing by remember { mutableStateOf(CameraSelector.DEFAULT_BACK_CAMERA) }
+    var surfaceRequest by remember { mutableStateOf<SurfaceRequest?>(null) }
 
     LaunchedEffect(isRecording) {
         if (isRecording) {
@@ -80,38 +81,25 @@ internal fun CameraPreviewContent(
         }
     }
 
+    LaunchedEffect(lensFacing) {
+        val cameraProvider = ProcessCameraProvider.awaitInstance(context)
+        val preview = Preview.Builder().build().apply {
+            setSurfaceProvider { request -> surfaceRequest = request }
+        }
+        val recorder = Recorder.Builder()
+            .setQualitySelector(QualitySelector.from(Quality.HD))
+            .build()
+        val capture = VideoCapture.withOutput(recorder)
+        videoCapture = capture
+
+        cameraProvider.unbindAll()
+        cameraProvider.bindToLifecycle(lifecycleOwner, lensFacing, preview, capture)
+    }
+
     Box(modifier = modifier.fillMaxSize()) {
-        key(lensFacing) {
-            AndroidView(
-                factory = { ctx ->
-                    val previewView = PreviewView(ctx).apply {
-                        implementationMode = PreviewView.ImplementationMode.COMPATIBLE
-                    }
-                    val cameraProviderFuture = ProcessCameraProvider.getInstance(ctx)
-
-                    cameraProviderFuture.addListener({
-                        val cameraProvider = cameraProviderFuture.get()
-                        val preview = Preview.Builder().build().also {
-                            it.surfaceProvider = previewView.surfaceProvider
-                        }
-
-                        val recorder = Recorder.Builder()
-                            .setQualitySelector(QualitySelector.from(Quality.HD))
-                            .build()
-                        val capture = VideoCapture.withOutput(recorder)
-                        videoCapture = capture
-
-                        cameraProvider.unbindAll()
-                        cameraProvider.bindToLifecycle(
-                            lifecycleOwner,
-                            lensFacing,
-                            preview,
-                            capture
-                        )
-                    }, ContextCompat.getMainExecutor(ctx))
-
-                    previewView
-                },
+        surfaceRequest?.let { request ->
+            CameraXViewfinder(
+                surfaceRequest = request,
                 modifier = Modifier.fillMaxSize()
             )
         }
@@ -137,8 +125,10 @@ internal fun CameraPreviewContent(
             },
             enabled = !isRecording,
             modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(16.dp)
+                .align(Alignment.BottomEnd)
+                .padding(end = 32.dp, bottom = 60.dp)
+                .clip(CircleShape)
+                .background(Color.Black.copy(alpha = 0.4f))
         ) {
             Icon(
                 imageVector = Icons.Filled.FlipCameraAndroid,
