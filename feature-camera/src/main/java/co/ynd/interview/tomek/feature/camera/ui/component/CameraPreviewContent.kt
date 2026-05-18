@@ -1,22 +1,8 @@
 package co.ynd.interview.tomek.feature.camera.ui.component
 
 import androidx.camera.compose.CameraXViewfinder
-import androidx.camera.core.CameraSelector
-import androidx.camera.core.Preview
 import androidx.camera.core.SurfaceRequest
-import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.camera.lifecycle.awaitInstance
-import androidx.camera.video.FileOutputOptions
-import androidx.camera.video.Quality
-import androidx.camera.video.QualitySelector
-import androidx.camera.video.Recorder
-import androidx.camera.video.Recording
-import androidx.camera.video.VideoCapture
-import androidx.camera.video.VideoRecordEvent
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -32,70 +18,28 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableLongStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat
-import androidx.lifecycle.compose.LocalLifecycleOwner
 import co.ynd.interview.tomek.core.ui.theme.RecordRed
 import co.ynd.interview.tomek.core.ui.util.formatDuration
-import co.ynd.interview.tomek.feature.camera.util.VideoFileManager
-import kotlinx.coroutines.delay
+import co.ynd.interview.tomek.feature.camera.R
 
 @Composable
 internal fun CameraPreviewContent(
+    surfaceRequest: SurfaceRequest?,
     isRecording: Boolean,
-    videoFileManager: VideoFileManager,
-    onRecordingStarted: () -> Unit,
-    onRecordingStopped: (filePath: String, durationMs: Long, thumbnailPath: String?) -> Unit,
-    onRecordingFailed: (Throwable) -> Unit,
+    recordingDurationMs: Long,
+    onToggleRecord: () -> Unit,
+    onFlipCamera: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val context = LocalContext.current
-    val lifecycleOwner = LocalLifecycleOwner.current
-
-    var recording by remember { mutableStateOf<Recording?>(null) }
-    var recordingDurationMs by remember { mutableLongStateOf(0L) }
-    var videoCapture by remember { mutableStateOf<VideoCapture<Recorder>?>(null) }
-    var lensFacing by remember { mutableStateOf(CameraSelector.DEFAULT_BACK_CAMERA) }
-    var surfaceRequest by remember { mutableStateOf<SurfaceRequest?>(null) }
-
-    LaunchedEffect(isRecording) {
-        if (isRecording) {
-            recordingDurationMs = 0L
-            while (true) {
-                delay(1000)
-                recordingDurationMs += 1000
-            }
-        }
-    }
-
-    LaunchedEffect(lensFacing) {
-        val cameraProvider = ProcessCameraProvider.awaitInstance(context)
-        val preview = Preview.Builder().build().apply {
-            setSurfaceProvider { request -> surfaceRequest = request }
-        }
-        val recorder = Recorder.Builder()
-            .setQualitySelector(QualitySelector.from(Quality.HD))
-            .build()
-        val capture = VideoCapture.withOutput(recorder)
-        videoCapture = capture
-
-        cameraProvider.unbindAll()
-        cameraProvider.bindToLifecycle(lifecycleOwner, lensFacing, preview, capture)
-    }
-
     Box(modifier = modifier.fillMaxSize()) {
         surfaceRequest?.let { request ->
             CameraXViewfinder(
@@ -116,13 +60,7 @@ internal fun CameraPreviewContent(
         }
 
         IconButton(
-            onClick = {
-                lensFacing = if (lensFacing == CameraSelector.DEFAULT_BACK_CAMERA) {
-                    CameraSelector.DEFAULT_FRONT_CAMERA
-                } else {
-                    CameraSelector.DEFAULT_BACK_CAMERA
-                }
-            },
+            onClick = onFlipCamera,
             enabled = !isRecording,
             modifier = Modifier
                 .align(Alignment.BottomEnd)
@@ -132,72 +70,32 @@ internal fun CameraPreviewContent(
         ) {
             Icon(
                 imageVector = Icons.Filled.FlipCameraAndroid,
-                contentDescription = "Flip camera",
+                contentDescription = stringResource(R.string.camera_flip_cd),
                 tint = Color.White
             )
         }
 
-        val infiniteTransition = rememberInfiniteTransition(label = "record_pulse")
-        val scale by infiniteTransition.animateFloat(
-            initialValue = 1f,
-            targetValue = if (isRecording) 1.2f else 1f,
-            animationSpec = infiniteRepeatable(
-                animation = tween(600),
-                repeatMode = RepeatMode.Reverse
-            ),
-            label = "record_scale"
-        )
+        val scale = remember { Animatable(1f) }
+        LaunchedEffect(isRecording) {
+            if (isRecording) {
+                while (true) {
+                    scale.animateTo(1.2f, animationSpec = tween(600))
+                    scale.animateTo(1f, animationSpec = tween(600))
+                }
+            } else {
+                scale.animateTo(1f, animationSpec = tween(300))
+            }
+        }
 
         Box(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(bottom = 48.dp)
                 .size(72.dp)
-                .scale(scale)
+                .scale(scale.value)
                 .clip(CircleShape)
                 .background(if (isRecording) Color.DarkGray else RecordRed)
-                .clickable {
-                    if (isRecording) {
-                        recording?.stop()
-                        recording = null
-                    } else {
-                        val capture = videoCapture ?: return@clickable
-                        val file = videoFileManager.createVideoFile()
-                        val outputOptions = FileOutputOptions.Builder(file).build()
-
-                        @Suppress("MissingPermission")
-                        recording = capture.output
-                            .prepareRecording(context, outputOptions)
-                            .withAudioEnabled()
-                            .start(ContextCompat.getMainExecutor(context)) { event ->
-                                when (event) {
-                                    is VideoRecordEvent.Start -> onRecordingStarted()
-                                    is VideoRecordEvent.Finalize -> {
-                                        if (event.hasError()) {
-                                            onRecordingFailed(
-                                                RuntimeException("Recording failed: ${event.error}")
-                                            )
-                                        } else {
-                                            val durationMs =
-                                                event.recordingStats.recordedDurationNanos / 1_000_000
-                                            val thumbFile = videoFileManager.extractThumbnail(file)
-                                            onRecordingStopped(
-                                                file.absolutePath,
-                                                durationMs,
-                                                thumbFile?.absolutePath
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                    }
-                }
+                .clickable { onToggleRecord() }
         )
-    }
-
-    DisposableEffect(Unit) {
-        onDispose {
-            recording?.stop()
-        }
     }
 }
