@@ -10,6 +10,7 @@ import co.ynd.interview.tomek.core.domain.usecase.SaveVideoEntryUseCase
 import co.ynd.interview.tomek.feature.camera.recorder.RecordingEvent
 import co.ynd.interview.tomek.feature.camera.recorder.VideoRecorder
 import co.ynd.interview.tomek.feature.camera.util.VideoFileOperations
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -25,6 +26,7 @@ class CameraViewModel(
     private val fileOperations: VideoFileOperations,
     private val savedStateHandle: SavedStateHandle,
     private val fileCleaner: VideoFileCleaner,
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : ViewModel() {
 
     val surfaceRequest = videoRecorder.surfaceRequest
@@ -98,11 +100,11 @@ class CameraViewModel(
                     durationJob?.cancel()
                     durationJob = null
                     val durationMs = event.durationMs
-                    viewModelScope.launch(Dispatchers.IO) {
-                        val thumbFile = fileOperations.extractThumbnail(file)
-                        withContext(Dispatchers.Main) {
-                            setReviewState(CameraUiState.Review(file.absolutePath, durationMs, thumbFile?.absolutePath))
+                    viewModelScope.launch {
+                        val thumbFile = withContext(ioDispatcher) {
+                            fileOperations.extractThumbnail(file)
                         }
+                        setReviewState(CameraUiState.Review(file.absolutePath, durationMs, thumbFile?.absolutePath))
                     }
                 }
                 is RecordingEvent.Failed -> {

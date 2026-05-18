@@ -46,6 +46,7 @@ class CameraViewModelTest {
             fileOperations = fakeFileOps,
             savedStateHandle = SavedStateHandle(),
             fileCleaner = fakeCleaner,
+            ioDispatcher = testDispatcher,
         )
     }
 
@@ -197,7 +198,7 @@ class CameraViewModelTest {
         assertEquals(CameraSelector.DEFAULT_BACK_CAMERA, viewModel.lensFacing.value)
     }
 
-    private suspend fun driveToReview() {
+    private fun driveToReview() {
         viewModel.startRecording()
         fakeRecorder.emit(RecordingEvent.Started)
         fakeRecorder.emit(RecordingEvent.Finalized(5000L))
