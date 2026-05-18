@@ -22,10 +22,9 @@ android {
 dependencies {
     implementation(project(":app"))
     implementation(project(":core-domain"))
+    implementation(project(":core-navigation"))
     implementation(project(":core-testing"))
     implementation(project(":feature-feed"))
-    implementation(project(":feature-feed-navigation"))
-    implementation(project(":feature-camera-navigation"))
 
     val composeBom = platform(libs.androidx.compose.bom)
     implementation(composeBom)

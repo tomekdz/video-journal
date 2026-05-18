@@ -25,9 +25,8 @@ android {
 
 dependencies {
     implementation(project(":core-domain"))
+    implementation(project(":core-navigation"))
     implementation(project(":core-ui"))
-    implementation(project(":feature-feed-navigation"))
-    implementation(project(":feature-camera-navigation"))
 
     val composeBom = platform(libs.androidx.compose.bom)
     implementation(composeBom)
@@ -47,6 +46,7 @@ dependencies {
 
     implementation(libs.androidx.navigation3.runtime)
 
+    testImplementation(project(":core-data"))
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
 

@@ -1,11 +1,10 @@
 plugins {
     alias(libs.plugins.android.library)
-    alias(libs.plugins.compose.compiler)
     alias(libs.plugins.kotlin.serialization)
 }
 
 android {
-    namespace = "co.ynd.interview.tomek.feature.feed.navigation"
+    namespace = "co.ynd.interview.tomek.core.navigation"
     compileSdk = 36
 
     defaultConfig {

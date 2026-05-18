@@ -50,10 +50,9 @@ dependencies {
     implementation(project(":core-data"))
     implementation(project(":core-database"))
     implementation(project(":core-domain"))
+    implementation(project(":core-navigation"))
     implementation(project(":feature-feed"))
-    implementation(project(":feature-feed-navigation"))
     implementation(project(":feature-camera"))
-    implementation(project(":feature-camera-navigation"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)

@@ -28,22 +28,23 @@ app ──→ feature-feed ──→ core-domain ← core-data ──→ core-da
 │           ↓
 │       core-ui
 │
-├──→ feature-feed-navigation      (NavKey only)
-├──→ feature-camera-navigation    (NavKey only)
+├──→ core-navigation              (NavKeys: FeedDestination, CameraDestination)
 ├──→ core-data, core-database     (Koin module wiring)
 └──→ core-ui
+
+feature-feed  ──→ core-navigation
+feature-camera ──→ core-navigation
 ```
 
 - **`:app`** — Application entry point, `VideoJournalApp` (Koin init), `MainActivity`, `MainNavigation`. Wires all Koin modules and feature entry providers into `NavDisplay`.
-- **`:core-domain`** — Pure Kotlin/JVM module (no Android deps). Domain model (`VideoEntry`), repository interface, use cases (`GetVideoEntriesUseCase`, `SaveVideoEntryUseCase`, `DeleteVideoEntryUseCase`, `GetVideoEntryByIdUseCase`), Koin `domainModule`.
-- **`:core-data`** — `DefaultVideoEntryRepository` backed by SQLDelight queries, `FakeVideoEntryRepository` for tests, mapper, Koin `dataModule`.
+- **`:core-domain`** — Pure Kotlin/JVM module (no Android deps). Domain model (`VideoEntry`), repository interface, use cases (`GetVideoEntriesUseCase`, `SaveVideoEntryUseCase`, `DeleteVideoEntryUseCase`), `VideoFileCleaner` interface, Koin `domainModule`.
+- **`:core-data`** — `DefaultVideoEntryRepository` backed by SQLDelight queries, `FakeVideoEntryRepository` for tests, `FileSystemVideoFileCleaner`, mapper, Koin `dataModule`.
 - **`:core-database`** — SQLDelight `VideoJournalDatabase`, `VideoEntry.sq` schema, `DatabaseDriverFactory`, Koin `databaseModule`.
+- **`:core-navigation`** — `FeedDestination` and `CameraDestination` NavKeys only. No Android logic.
 - **`:core-ui`** — Compose theme, shared components (`VideoPlayer`, `VideoThumbnail`, `LoadingIndicator`, `ErrorMessage`, `PermissionRationaleDialog`), utility functions.
-- **`:core-testing`** — `KoinTestRunner`, `testDataModule` that swaps in `FakeVideoEntryRepository`.
+- **`:core-testing`** — `KoinTestRunner`, `testDataModule` that swaps in `FakeVideoEntryRepository` and a no-op `VideoFileCleaner`.
 - **`:feature-feed`** — Feed screen with `LazyColumn` of video cards, inline playback, share/delete actions. `FeedViewModel` + Koin `feedModule`.
-- **`:feature-feed-navigation`** — `FeedDestination` NavKey only.
-- **`:feature-camera`** — CameraX recording screen, review/describe flow, permission handling. `CameraViewModel` + Koin `cameraModule`.
-- **`:feature-camera-navigation`** — `CameraDestination` NavKey only.
+- **`:feature-camera`** — CameraX recording screen, review/describe flow, permission handling. `CameraViewModel` owns all recording state via `VideoRecorder`/`VideoFileOperations` abstractions. Koin `cameraModule`.
 - **`:test-app`** — Instrumented test module targeting `:app`.
 
 ## Architecture Patterns

@@ -6,8 +6,8 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
+import co.ynd.interview.tomek.core.navigation.FeedDestination
 import co.ynd.interview.tomek.feature.camera.navigation.CameraEntryProvider
-import co.ynd.interview.tomek.feature.feed.navigation.FeedDestination
 import co.ynd.interview.tomek.feature.feed.navigation.FeedEntryProvider
 
 @Composable
