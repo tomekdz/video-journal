@@ -19,7 +19,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import co.ynd.interview.tomek.core.domain.model.VideoEntry
@@ -45,8 +44,7 @@ internal fun VideoEntryCard(
                     filePath = entry.filePath,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .aspectRatio(16f / 9f)
-                        .clip(MaterialTheme.shapes.medium)
+                        .aspectRatio(9f / 16f)
                         .clickable { onTogglePlay() }
                 )
             } else {
@@ -55,8 +53,7 @@ internal fun VideoEntryCard(
                     filePath = entry.filePath,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .aspectRatio(16f / 9f)
-                        .clip(MaterialTheme.shapes.medium)
+                        .aspectRatio(9f / 16f)
                         .clickable { onTogglePlay() }
                 )
             }
@@ -83,10 +80,16 @@ internal fun VideoEntryCard(
 
                 Row {
                     IconButton(onClick = onShare) {
-                        Icon(Icons.Filled.Share, contentDescription = stringResource(R.string.feed_share_cd))
+                        Icon(
+                            Icons.Filled.Share,
+                            contentDescription = stringResource(R.string.feed_share_cd)
+                        )
                     }
                     IconButton(onClick = onDelete) {
-                        Icon(Icons.Filled.Delete, contentDescription = stringResource(R.string.feed_delete_cd))
+                        Icon(
+                            Icons.Filled.Delete,
+                            contentDescription = stringResource(R.string.feed_delete_cd)
+                        )
                     }
                 }
             }
