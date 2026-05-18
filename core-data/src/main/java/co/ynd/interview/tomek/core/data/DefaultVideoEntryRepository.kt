@@ -12,7 +12,8 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 
 class DefaultVideoEntryRepository(
-    private val queries: VideoEntryQueries
+    private val queries: VideoEntryQueries,
+    private val clock: () -> Long = { System.currentTimeMillis() },
 ) : VideoEntryRepository {
 
     override fun getVideoEntries(): Flow<List<VideoEntry>> =
@@ -35,7 +36,7 @@ class DefaultVideoEntryRepository(
             queries.insert(
                 filePath = filePath,
                 description = description,
-                createdAt = System.currentTimeMillis(),
+                createdAt = clock(),
                 durationMs = durationMs,
                 thumbnailPath = thumbnailPath
             )
