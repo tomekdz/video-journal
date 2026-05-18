@@ -6,38 +6,28 @@ import android.media.MediaMetadataRetriever
 import java.io.File
 import java.io.FileOutputStream
 
-class VideoFileManager(private val context: Context) {
+class VideoFileManager(private val context: Context) : VideoFileOperations {
 
-    private val videosDir: File
-        get() = File(context.filesDir, "videos").also { it.mkdirs() }
+    private val videosDir: File = File(context.filesDir, "videos").also { it.mkdirs() }
+    private val thumbnailsDir: File = File(context.filesDir, "thumbnails").also { it.mkdirs() }
 
-    private val thumbnailsDir: File
-        get() = File(context.filesDir, "thumbnails").also { it.mkdirs() }
-
-    fun createVideoFile(): File {
+    override fun createVideoFile(): File {
         return File(videosDir, "video_${System.currentTimeMillis()}.mp4")
     }
 
-    fun extractThumbnail(videoFile: File): File? {
+    override fun extractThumbnail(videoFile: File): File? {
+        val retriever = MediaMetadataRetriever()
         return try {
-            val retriever = MediaMetadataRetriever()
             retriever.setDataSource(videoFile.absolutePath)
-            val bitmap = retriever.getFrameAtTime(0, MediaMetadataRetriever.OPTION_CLOSEST_SYNC)
-            retriever.release()
-
-            bitmap?.let {
-                val thumbFile = File(thumbnailsDir, "thumb_${System.currentTimeMillis()}.jpg")
-                FileOutputStream(thumbFile).use { out ->
-                    it.compress(Bitmap.CompressFormat.JPEG, 80, out)
-                }
-                thumbFile
-            }
-        } catch (e: Exception) {
+            val bitmap = retriever.getFrameAtTime(500_000L, MediaMetadataRetriever.OPTION_CLOSEST)
+                ?: return null
+            val thumbFile = File(thumbnailsDir, "thumb_${System.currentTimeMillis()}.jpg")
+            FileOutputStream(thumbFile).use { bitmap.compress(Bitmap.CompressFormat.JPEG, 80, it) }
+            thumbFile
+        } catch (_: RuntimeException) {
             null
+        } finally {
+            retriever.release()
         }
-    }
-
-    fun deleteFile(path: String) {
-        File(path).delete()
     }
 }
