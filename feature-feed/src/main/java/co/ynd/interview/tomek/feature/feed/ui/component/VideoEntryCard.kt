@@ -20,25 +20,24 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import co.ynd.interview.tomek.core.domain.model.VideoEntry
 import co.ynd.interview.tomek.core.ui.component.VideoPlayer
 import co.ynd.interview.tomek.core.ui.component.VideoThumbnail
 import co.ynd.interview.tomek.core.ui.util.formatDuration
 import co.ynd.interview.tomek.core.ui.util.formatRelativeTime
-import co.ynd.interview.tomek.feature.feed.util.shareVideo
+import co.ynd.interview.tomek.feature.feed.R
 
 @Composable
 internal fun VideoEntryCard(
     entry: VideoEntry,
     isPlaying: Boolean,
     onTogglePlay: () -> Unit,
+    onShare: () -> Unit,
     onDelete: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val context = LocalContext.current
-
     ElevatedCard(modifier = modifier.fillMaxWidth()) {
         Crossfade(targetState = isPlaying, label = "video_player") { playing ->
             if (playing) {
@@ -83,11 +82,11 @@ internal fun VideoEntryCard(
                 )
 
                 Row {
-                    IconButton(onClick = { shareVideo(context, entry.filePath) }) {
-                        Icon(Icons.Filled.Share, contentDescription = "Share")
+                    IconButton(onClick = onShare) {
+                        Icon(Icons.Filled.Share, contentDescription = stringResource(R.string.feed_share_cd))
                     }
                     IconButton(onClick = onDelete) {
-                        Icon(Icons.Filled.Delete, contentDescription = "Delete")
+                        Icon(Icons.Filled.Delete, contentDescription = stringResource(R.string.feed_delete_cd))
                     }
                 }
             }

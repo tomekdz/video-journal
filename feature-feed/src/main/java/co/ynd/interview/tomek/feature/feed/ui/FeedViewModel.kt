@@ -4,8 +4,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import co.ynd.interview.tomek.core.domain.usecase.DeleteVideoEntryUseCase
 import co.ynd.interview.tomek.core.domain.usecase.GetVideoEntriesUseCase
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -21,9 +24,16 @@ class FeedViewModel(
         .catch { emit(FeedUiState.Error(it)) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), FeedUiState.Loading)
 
+    private val _events = MutableSharedFlow<FeedEvent>(extraBufferCapacity = 1)
+    val events: SharedFlow<FeedEvent> = _events.asSharedFlow()
+
     fun deleteEntry(id: Long) {
         viewModelScope.launch {
-            deleteVideoEntryUseCase(id)
+            try {
+                deleteVideoEntryUseCase(id)
+            } catch (t: Throwable) {
+                _events.tryEmit(FeedEvent.DeleteFailed)
+            }
         }
     }
 }

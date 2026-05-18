@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feed_title">Video Journal</string>
+    <string name="feed_record_video_cd">Record video</string>
+    <string name="feed_empty">No videos yet. Tap the camera button to record one!</string>
+    <string name="feed_share_cd">Share</string>
+    <string name="feed_delete_cd">Delete</string>
+    <string name="feed_delete_confirm_title">Delete video?</string>
+    <string name="feed_delete_confirm_body">This will permanently delete the recording.</string>
+    <string name="feed_delete_confirm_cd">Confirm delete</string>
+    <string name="feed_confirm">Delete</string>
+    <string name="feed_cancel">Cancel</string>
+    <string name="feed_share_missing">Video file not found</string>
+    <string name="feed_delete_failed">Failed to delete video</string>
+</resources>

@@ -5,9 +5,9 @@ import android.content.Intent
 import androidx.core.content.FileProvider
 import java.io.File
 
-fun shareVideo(context: Context, filePath: String) {
+fun shareVideo(context: Context, filePath: String): Boolean {
     val file = File(filePath)
-    if (!file.exists()) return
+    if (!file.exists()) return false
 
     val uri = FileProvider.getUriForFile(
         context,
@@ -22,4 +22,5 @@ fun shareVideo(context: Context, filePath: String) {
     }
 
     context.startActivity(Intent.createChooser(intent, "Share video"))
+    return true
 }
