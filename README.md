@@ -82,11 +82,15 @@ Navigation 3's `EntryProvider` composition model is a meaningful step forward ov
 
 ### Challenges
 
-AGP 9.x drops the `kotlin-android` plugin and bundles Kotlin support directly, which required adjusting the module setup to distinguish `:core-domain` (pure JVM, `java-library`) from Android library modules — easy to get wrong silently. `stateIn(WhileSubscribed(...))` in unit tests requires an active collector to start the upstream; tests that read `.value` directly without subscribing always see the initial `Loading` state. Fixed by launching a no-op collector with `UnconfinedTestDispatcher` before asserting, but the failure mode is subtle enough that it's worth calling out.
+- **AGP 9.x module setup.** AGP 9.x drops the `kotlin-android` plugin and bundles Kotlin support directly, which required adjusting the module setup to distinguish `:core-domain` (pure JVM, `java-library`) from Android library modules — easy to get wrong silently.
+- **`stateIn(WhileSubscribed(...))` in unit tests.** Requires an active collector to start the upstream; tests that read `.value` directly without subscribing always see the initial `Loading` state. Fixed by launching a no-op collector with `UnconfinedTestDispatcher` before asserting, but the failure mode is subtle enough to be worth calling out.
+- **ExoPlayer lifecycle in Compose.** A shared `ExoPlayer` bound via a `LifecycleObserver` had to be re-bound when the playing `filePath` changes within the same composition — otherwise it silently kept playing the previous source after recomposition. Resolved by keying the rebind on the file path.
+- **Deterministic feed ordering under fast inserts.** Two `add()` calls within the same millisecond produced an unstable order in tests. `DefaultVideoEntryRepository` now takes a `clock: () -> Long` injected at construction so tests can advance time monotonically, and prod wires `System.currentTimeMillis`.
+- **Orphan file cleanup timing.** Running the cleaner on `Application.onCreate` is safe; running it after the camera screen returns would race with an in-flight `VideoRecorder` write. The startup-only placement is intentional, not a sequencing oversight.
+- **Koin module swap for instrumented tests.** Test-app instrumented tests rely on `loadKoinModules(testDataModule)` to override the real repository binding; getting load/unload order wrong leaks the real SQLDelight driver between tests. `KoinTestRunner` + `testDataModule` in `:core-testing` exist specifically to make this hard to get wrong.
 
 ### What I'd improve with more time
 
-- Add a confirmation dialog before deleting an entry, and clean up orphaned video files when the user navigates back mid-recording without saving — currently those files accumulate silently.
-- Expand instrumented test coverage to cover the full record → describe → save → feed golden path in `:test-app`, and add SQLDelight integration tests against a real in-memory driver (currently the repository layer is tested only via the fake).
+- Expand instrumented coverage to the full record → review → describe → save → feed golden path in `:test-app` — currently `AppTest` exercises only feed display and delete; the camera flow is uncovered.
 - Introduce pagination or a `PagingSource` for the feed — the current `LazyColumn` loads all entries at once, which is fine for a journal but would degrade on large datasets.
 - Add playback progress indicators and a seek bar to the inline player for a more complete media experience.
