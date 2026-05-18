@@ -23,7 +23,7 @@ fun VideoPlayer(
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
 
-    val exoPlayer = remember {
+    val exoPlayer = remember(filePath) {
         ExoPlayer.Builder(context).build().apply {
             setMediaItem(MediaItem.fromUri(Uri.fromFile(File(filePath))))
             prepare()
@@ -31,13 +31,9 @@ fun VideoPlayer(
         }
     }
 
-    DisposableEffect(lifecycleOwner) {
+    DisposableEffect(filePath) {
         val observer = LifecycleEventObserver { _, event ->
-            when (event) {
-                Lifecycle.Event.ON_PAUSE -> exoPlayer.pause()
-                Lifecycle.Event.ON_RESUME -> exoPlayer.play()
-                else -> {}
-            }
+            if (event == Lifecycle.Event.ON_STOP) exoPlayer.pause()
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose {
@@ -53,6 +49,7 @@ fun VideoPlayer(
                 useController = true
             }
         },
+        update = { playerView -> playerView.player = exoPlayer },
         modifier = modifier
     )
 }
