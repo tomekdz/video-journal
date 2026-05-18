@@ -4,14 +4,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import co.ynd.interview.tomek.core.ui.component.ErrorMessage
+import co.ynd.interview.tomek.feature.camera.R
 import co.ynd.interview.tomek.feature.camera.ui.component.CameraPreviewContent
 import co.ynd.interview.tomek.feature.camera.ui.component.ReviewContent
 import co.ynd.interview.tomek.feature.camera.ui.permission.RequireCameraPermissions
-import co.ynd.interview.tomek.feature.camera.util.VideoFileManager
 import org.koin.androidx.compose.koinViewModel
-import org.koin.compose.koinInject
 
 @Composable
 fun CameraScreen(
@@ -20,9 +21,20 @@ fun CameraScreen(
     viewModel: CameraViewModel = koinViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val videoFileManager: VideoFileManager = koinInject()
+    val surfaceRequest by viewModel.surfaceRequest.collectAsStateWithLifecycle()
+    val lensFacing by viewModel.lensFacing.collectAsStateWithLifecycle()
+    val recordingDurationMs by viewModel.recordingDurationMs.collectAsStateWithLifecycle()
+    val lifecycleOwner = LocalLifecycleOwner.current
 
-    LaunchedEffect(uiState) {
+    val recordingFailedMessage = stringResource(R.string.camera_recording_failed)
+    val saveFailedMessage = stringResource(R.string.camera_save_failed)
+    val permissionDeniedMessage = stringResource(R.string.camera_permission_denied)
+
+    LaunchedEffect(lensFacing) {
+        viewModel.bindCamera(lifecycleOwner)
+    }
+
+    LaunchedEffect(uiState is CameraUiState.Saved) {
         if (uiState is CameraUiState.Saved) {
             onNavigateBack()
         }
@@ -34,11 +46,14 @@ fun CameraScreen(
                 is CameraUiState.Ready,
                 is CameraUiState.Recording -> {
                     CameraPreviewContent(
+                        surfaceRequest = surfaceRequest,
                         isRecording = state is CameraUiState.Recording,
-                        videoFileManager = videoFileManager,
-                        onRecordingStarted = viewModel::onRecordingStarted,
-                        onRecordingStopped = viewModel::onRecordingStopped,
-                        onRecordingFailed = viewModel::onRecordingFailed,
+                        recordingDurationMs = recordingDurationMs,
+                        onToggleRecord = {
+                            if (state is CameraUiState.Recording) viewModel.stopRecording()
+                            else viewModel.startRecording()
+                        },
+                        onFlipCamera = viewModel::flipCamera,
                         modifier = modifier
                     )
                 }
@@ -52,8 +67,17 @@ fun CameraScreen(
                 }
                 is CameraUiState.Error -> {
                     ErrorMessage(
-                        message = state.throwable.message ?: "Recording failed",
+                        message = state.throwable.message ?: recordingFailedMessage,
                         onRetry = viewModel::resetToReady,
+                        modifier = modifier
+                    )
+                }
+                is CameraUiState.SaveError -> {
+                    ReviewContent(
+                        filePath = state.review.filePath,
+                        onSave = { description -> viewModel.retrySave(description) },
+                        onDiscard = viewModel::discardRecording,
+                        saveError = state.throwable.message ?: saveFailedMessage,
                         modifier = modifier
                     )
                 }
@@ -62,7 +86,7 @@ fun CameraScreen(
         },
         onDenied = {
             ErrorMessage(
-                message = "Camera and microphone permissions are required to record video.",
+                message = permissionDeniedMessage,
                 modifier = modifier
             )
         }

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="camera_description_hint">Description (optional)</string>
+    <string name="camera_discard">Discard</string>
+    <string name="camera_save">Save</string>
+    <string name="camera_flip_cd">Flip camera</string>
+    <string name="camera_permission_denied">Camera and microphone permissions are required to record video.</string>
+    <string name="camera_recording_failed">Recording failed</string>
+    <string name="camera_save_failed">Save failed. Please try again.</string>
+    <string name="camera_permission_name">Camera and Microphone</string>
+    <string name="camera_permission_grant">Grant</string>
+    <string name="camera_open_settings">Open Settings</string>
+</resources>

@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -17,16 +18,20 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import co.ynd.interview.tomek.core.ui.component.VideoPlayer
+import co.ynd.interview.tomek.feature.camera.R
 
 @Composable
 internal fun ReviewContent(
     filePath: String,
     onSave: (description: String) -> Unit,
     onDiscard: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    saveError: String? = null
 ) {
+    val maxLength = 500
     var description by remember { mutableStateOf("") }
 
     Column(
@@ -44,11 +49,20 @@ internal fun ReviewContent(
 
         OutlinedTextField(
             value = description,
-            onValueChange = { description = it },
-            label = { Text("Description (optional)") },
+            onValueChange = { if (it.length <= maxLength) description = it },
+            label = { Text(stringResource(R.string.camera_description_hint)) },
             modifier = Modifier.fillMaxWidth(),
-            maxLines = 3
+            maxLines = 3,
+            supportingText = { Text("${description.length}/$maxLength") }
         )
+
+        if (saveError != null) {
+            Text(
+                text = saveError,
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
 
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -58,13 +72,13 @@ internal fun ReviewContent(
                 onClick = onDiscard,
                 modifier = Modifier.weight(1f)
             ) {
-                Text("Discard")
+                Text(stringResource(R.string.camera_discard))
             }
             Button(
                 onClick = { onSave(description) },
                 modifier = Modifier.weight(1f)
             ) {
-                Text("Save")
+                Text(stringResource(R.string.camera_save))
             }
         }
     }

@@ -9,5 +9,6 @@ sealed interface CameraUiState {
         val thumbnailPath: String?
     ) : CameraUiState
     data class Error(val throwable: Throwable) : CameraUiState
+    data class SaveError(val review: Review, val throwable: Throwable) : CameraUiState
     data object Saved : CameraUiState
 }
