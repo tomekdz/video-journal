@@ -1,13 +1,12 @@
 package co.ynd.interview.tomek.feature.feed.ui
 
+import co.ynd.interview.tomek.core.data.FakeVideoEntryRepository
+import co.ynd.interview.tomek.core.domain.VideoFileCleaner
 import co.ynd.interview.tomek.core.domain.model.VideoEntry
-import co.ynd.interview.tomek.core.domain.repository.VideoEntryRepository
 import co.ynd.interview.tomek.core.domain.usecase.DeleteVideoEntryUseCase
 import co.ynd.interview.tomek.core.domain.usecase.GetVideoEntriesUseCase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
@@ -26,7 +25,7 @@ import org.junit.Test
 class FeedViewModelTest {
 
     private val testDispatcher = StandardTestDispatcher()
-    private val fakeRepository = FakeRepository()
+    private val fakeRepository = FakeVideoEntryRepository()
     private lateinit var viewModel: FeedViewModel
 
     @Before
@@ -34,7 +33,10 @@ class FeedViewModelTest {
         Dispatchers.setMain(testDispatcher)
         viewModel = FeedViewModel(
             getVideoEntriesUseCase = GetVideoEntriesUseCase(fakeRepository),
-            deleteVideoEntryUseCase = DeleteVideoEntryUseCase(fakeRepository)
+            deleteVideoEntryUseCase = DeleteVideoEntryUseCase(
+                fakeRepository,
+                object : VideoFileCleaner { override suspend fun delete(filePath: String, thumbnailPath: String?) {} }
+            )
         )
     }
 
@@ -93,20 +95,5 @@ class FeedViewModelTest {
 
         assertEquals(2, (viewModel.uiState.value as FeedUiState.Success).entries.size)
         job.cancel()
-    }
-}
-
-private class FakeRepository : VideoEntryRepository {
-    private val _entries = MutableStateFlow<List<VideoEntry>>(emptyList())
-
-    fun emit(entries: List<VideoEntry>) {
-        _entries.value = entries
-    }
-
-    override fun getVideoEntries(): Flow<List<VideoEntry>> = _entries
-    override suspend fun getById(id: Long) = _entries.value.find { it.id == id }
-    override suspend fun add(filePath: String, description: String, durationMs: Long, thumbnailPath: String?) {}
-    override suspend fun delete(id: Long) {
-        _entries.value = _entries.value.filter { it.id != id }
     }
 }

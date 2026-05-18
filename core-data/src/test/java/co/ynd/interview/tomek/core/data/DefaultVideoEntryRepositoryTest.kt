@@ -12,14 +12,16 @@ import org.junit.Test
 
 class DefaultVideoEntryRepositoryTest {
 
+    private var time = 1000L
     private lateinit var repository: DefaultVideoEntryRepository
 
     @Before
     fun setup() {
+        time = 1000L
         val driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
         VideoJournalDatabase.Schema.create(driver)
         val queries = VideoJournalDatabase(driver).videoEntryQueries
-        repository = DefaultVideoEntryRepository(queries)
+        repository = DefaultVideoEntryRepository(queries, clock = { time++ })
     }
 
     @Test
@@ -62,7 +64,6 @@ class DefaultVideoEntryRepositoryTest {
     @Test
     fun `entries are returned latest first`() = runTest {
         repository.add("/videos/first.mp4", "First", 1000L, null)
-        Thread.sleep(10) // ensure distinct createdAt timestamps for deterministic ordering
         repository.add("/videos/second.mp4", "Second", 2000L, null)
 
         val entries = repository.getVideoEntries().first()
